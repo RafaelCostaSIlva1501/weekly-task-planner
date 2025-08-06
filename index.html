@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Minha Rotina Semanal</title>
+    <!-- Tailwind CSS CDN para um design moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Variáveis CSS para o tema claro/escuro */
+      :root {
+        --bg-color: #f8fafc; /* light-blue-50 */
+        --text-color: #1e293b; /* slate-800 */
+        --header-bg: #e2e8f0; /* slate-200 */
+        --border-color: #cbd5e1; /* slate-300 */
+        --input-bg: #ffffff;
+        --button-bg: #3b82f6; /* blue-500 */
+        --button-text: #ffffff;
+        --status-pending: #94a3b8; /* slate-400 */
+        --status-in-progress: #facc15; /* yellow-400 */
+        --status-done: #22c55e; /* green-500 */
+      }
+
+      .dark-mode {
+        --bg-color: #1e293b; /* slate-800 */
+        --text-color: #f8fafc; /* light-blue-50 */
+        --header-bg: #334155; /* slate-700 */
+        --border-color: #475569; /* slate-600 */
+        --input-bg: #0f172a; /* slate-900 */
+        --button-bg: #60a5fa; /* blue-400 */
+        --button-text: #1e293b;
+        --status-pending: #64748b; /* slate-500 */
+        --status-in-progress: #fde047; /* yellow-300 */
+        --status-done: #4ade80; /* green-400 */
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        transition: background-color 0.3s, color 0.3s;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1.5rem;
+        flex-grow: 1;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-color);
+      }
+
+      .theme-toggle-button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 9999px;
+        background-color: var(--button-bg);
+        color: var(--button-text);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .theme-toggle-button:hover {
+        background-color: var(--button-bg); /* Slightly darker on hover */
+        transform: translateY(-1px);
+      }
+
+      .routine-table-wrapper {
+        overflow-x: auto;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        background-color: var(--input-bg);
+      }
+
+      .routine-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 700px; /* Minimum width to ensure columns are not too narrow */
+      }
+
+      .routine-table th {
+        border: 1px solid var(--border-color);
+        padding: 1rem;
+        text-align: center;
+        white-space: nowrap; /* Prevent text wrapping in headers */
+      }
+
+      .routine-table td {
+        border: 1px solid var(--border-color);
+        padding: 1rem;
+        text-align: center;
+        white-space: normal; /* Allow text wrapping in task cells */
+        /* REMOVED: height: 80px; - to allow dynamic height based on content */
+      }
+
+      .routine-table th {
+        background-color: var(--header-bg);
+        font-weight: 600;
+        color: var(--text-color);
+        position: relative; /* For editable input positioning */
+      }
+
+      .routine-table td {
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        position: relative;
+        vertical-align: top; /* Align content to top */
+        /* height: 80px; REMOVED to allow dynamic height */
+      }
+
+      .task-cell-content {
+        min-height: 100%; /* Ensure contenteditable takes full height */
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: flex-start; /* Align text to top-left */
+        padding-right: 20px; /* Space for status icon */
+        text-align: left;
+      }
+
+      .status-icon {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        cursor: pointer;
+        border: 1px solid var(--border-color);
+        transition: background-color 0.2s;
+      }
+
+      .status-pending {
+        background-color: var(--status-pending);
+      }
+      .status-in-progress {
+        background-color: var(--status-in-progress);
+      }
+      .status-done {
+        background-color: var(--status-done);
+      }
+
+      .add-time-container {
+        display: flex;
+        gap: 0.75rem;
+        background-color: var(--header-bg);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        z-index: 1000; /* Ensure it's above other content */
+      }
+
+      .add-time-container input {
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--border-color);
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        outline: none;
+        flex-grow: 1;
+      }
+
+      .add-time-container button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        background-color: var(--button-bg);
+        color: var(--button-text);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+      }
+
+      .add-time-container button:hover {
+        background-color: var(--button-bg); /* Slightly darker on hover */
+        transform: translateY(-1px);
+      }
+
+      /* Styling for editable input within table headers */
+      .editable-input {
+        width: calc(100% - 20px); /* Adjust width to fit */
+        padding: 0.5rem;
+        border: 1px solid var(--button-bg);
+        border-radius: 0.25rem;
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        text-align: center;
+        font-weight: 600;
+        outline: none;
+      }
+    </style>
+  </head>
+  <body class="light-mode">
+    <div class="container">
+      <header class="header">
+        <h1>Minha Rotina Semanal</h1>
+
+        <div class="add-time-container">
+          <input
+            type="text"
+            id="new-time-input"
+            placeholder="Novo horário (ex: 10:00)"
+          />
+          <button id="add-time-button">Adicionar Horário</button>
+        </div>
+
+        <button id="theme-toggle" class="theme-toggle-button">
+          Alternar Tema
+        </button>
+      </header>
+
+      <div class="routine-table-wrapper">
+        <table id="routine-table" class="routine-table">
+          <thead>
+            <tr id="time-headers">
+              <th class="sticky-col">Dia/Hora</th>
+              <!-- Horários serão adicionados aqui via JS -->
+            </tr>
+          </thead>
+          <tbody id="routine-body">
+            <!-- Dias da semana e tarefas serão adicionados aqui via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      // Referências aos elementos do DOM
+      const themeToggleButton = document.getElementById("theme-toggle");
+      const body = document.body;
+      const routineTable = document.getElementById("routine-table");
+      const timeHeadersRow = document.getElementById("time-headers");
+      const routineBody = document.getElementById("routine-body");
+      const newTimeInput = document.getElementById("new-time-input");
+      const addTimeButton = document.getElementById("add-time-button");
+
+      // Dias da semana fixos
+      const daysOfWeek = [
+        "Segunda-feira",
+        "Terça-feira",
+        "Quarta-feira",
+        "Quinta-feira",
+        "Sexta-feira",
+        "Sábado",
+        "Domingo",
+      ];
+
+      // Estrutura de dados para a rotina
+      // Ex: { 'Segunda-feira': { '09:00': { task: 'Reunião', status: 'pending' } } }
+      let routineData = {};
+      let currentTimes = []; // Array para manter a ordem dos horários
+
+      // --- Funções de Persistência (localStorage) ---
+
+      /**
+       * Salva os dados da rotina no localStorage.
+       */
+      function saveRoutineData() {
+        localStorage.setItem("weeklyRoutineData", JSON.stringify(routineData));
+        localStorage.setItem(
+          "weeklyRoutineTimes",
+          JSON.stringify(currentTimes)
+        );
+      }
+
+      /**
+       * Carrega os dados da rotina do localStorage.
+       */
+      function loadRoutineData() {
+        const savedData = localStorage.getItem("weeklyRoutineData");
+        const savedTimes = localStorage.getItem("weeklyRoutineTimes");
+
+        // 1. Carrega ou inicializa currentTimes
+        if (savedTimes) {
+          currentTimes = JSON.parse(savedTimes);
+        } else {
+          currentTimes = ["09:00", "10:00", "11:00"];
+        }
+
+        // 2. Carrega ou inicializa routineData
+        if (savedData) {
+          routineData = JSON.parse(savedData);
+        } else {
+          routineData = {};
+          daysOfWeek.forEach((day) => {
+            routineData[day] = {};
+          });
+        }
+
+        // 3. Garante que todos os horários atuais tenham entradas para todos os dias em routineData
+        daysOfWeek.forEach((day) => {
+          if (!routineData[day]) {
+            routineData[day] = {};
+          }
+          currentTimes.forEach((time) => {
+            if (!routineData[day][time]) {
+              routineData[day][time] = { task: "", status: "pending" };
+            }
+          });
+        });
+      }
+
+      /**
+       * Salva a preferência de tema (claro/escuro) no localStorage.
+       */
+      function saveThemePreference() {
+        localStorage.setItem(
+          "theme",
+          body.classList.contains("dark-mode") ? "dark-mode" : "light-mode"
+        );
+      }
+
+      /**
+       * Carrega a preferência de tema do localStorage.
+       */
+      function loadThemePreference() {
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme) {
+          body.classList.remove("light-mode", "dark-mode");
+          body.classList.add(savedTheme);
+        } else {
+          // Tema padrão se não houver preferência salva
+          body.classList.add("light-mode");
+        }
+      }
+
+      // --- Funções de Renderização da Tabela ---
+
+      /**
+       * Renderiza os cabeçalhos de horário da tabela.
+       */
+      function renderTimeHeaders() {
+        // Limpa os cabeçalhos existentes, mantendo o primeiro (Dia/Hora)
+        while (timeHeadersRow.children.length > 1) {
+          timeHeadersRow.removeChild(timeHeadersRow.lastChild);
+        }
+
+        // Adiciona os novos cabeçalhos de horário
+        currentTimes.forEach((time) => {
+          const th = document.createElement("th");
+          th.textContent = time;
+          th.dataset.time = time; // Armazena o horário no dataset
+          th.classList.add("time-header-cell"); // Adiciona classe para identificação
+          timeHeadersRow.appendChild(th);
+        });
+      }
+
+      /**
+       * Renderiza as linhas (dias) e células (tarefas) da tabela.
+       */
+      function renderRoutineBody() {
+        routineBody.innerHTML = ""; // Limpa o corpo da tabela
+
+        daysOfWeek.forEach((day) => {
+          const tr = document.createElement("tr");
+          const dayCell = document.createElement("td");
+          dayCell.textContent = day;
+          dayCell.classList.add(
+            "font-medium",
+            "bg-gray-100",
+            "dark:bg-slate-700"
+          ); // Estilo para a célula do dia
+          tr.appendChild(dayCell);
+
+          currentTimes.forEach((time) => {
+            const td = document.createElement("td");
+            td.dataset.day = day;
+            td.dataset.time = time;
+            td.classList.add("task-cell");
+
+            // Garante que a estrutura da tarefa exista
+            if (!routineData[day][time]) {
+              routineData[day][time] = { task: "", status: "pending" };
+            }
+
+            const taskContent = document.createElement("div");
+            taskContent.classList.add("task-cell-content");
+            taskContent.contentEditable = true;
+            taskContent.textContent = routineData[day][time].task;
+            td.appendChild(taskContent);
+
+            const statusIcon = document.createElement("div");
+            statusIcon.classList.add("status-icon");
+            statusIcon.dataset.status = routineData[day][time].status;
+            updateStatusIconClass(statusIcon, routineData[day][time].status);
+            td.appendChild(statusIcon);
+
+            tr.appendChild(td);
+          });
+          routineBody.appendChild(tr);
+        });
+      }
+
+      /**
+       * Atualiza a classe do ícone de status com base no estado.
+       * @param {HTMLElement} iconElement - O elemento do ícone de status.
+       * @param {string} status - O status ('pending', 'in-progress', 'done').
+       */
+      function updateStatusIconClass(iconElement, status) {
+        iconElement.classList.remove(
+          "status-pending",
+          "status-in-progress",
+          "status-done"
+        );
+        iconElement.classList.add(`status-${status}`);
+      }
+
+      /**
+       * Renderiza a tabela completa (cabeçalhos e corpo).
+       */
+      function renderTable() {
+        renderTimeHeaders();
+        renderRoutineBody();
+      }
+
+      // --- Funções de Manipulação de Eventos ---
+
+      /**
+       * Alterna entre os modos claro e escuro.
+       */
+      function toggleTheme() {
+        body.classList.toggle("dark-mode");
+        saveThemePreference();
+      }
+
+      /**
+       * Adiciona um novo horário à tabela.
+       */
+      function addNewTime() {
+        const newTime = newTimeInput.value.trim();
+        if (newTime && !currentTimes.includes(newTime)) {
+          currentTimes.push(newTime);
+          currentTimes.sort(); // Mantém os horários ordenados
+
+          // Adiciona o novo horário a todos os dias na estrutura de dados
+          daysOfWeek.forEach((day) => {
+            routineData[day][newTime] = { task: "", status: "pending" };
+          });
+
+          renderTable(); // Re-renderiza a tabela completa
+          saveRoutineData();
+          newTimeInput.value = ""; // Limpa o input
+        } else if (newTime) {
+          alert("Este horário já existe na sua rotina.");
+        }
+      }
+
+      /**
+       * Lida com a edição do texto da tarefa em uma célula.
+       * @param {Event} event - O evento de input ou blur.
+       */
+      function handleTaskEdit(event) {
+        const cell = event.target.closest(".task-cell");
+        if (cell) {
+          const day = cell.dataset.day;
+          const time = cell.dataset.time;
+          const newTask = event.target.textContent.trim();
+          routineData[day][time].task = newTask;
+          saveRoutineData();
+        }
+      }
+
+      /**
+       * Lida com a alternância do status da tarefa.
+       * @param {Event} event - O evento de clique no ícone de status.
+       */
+      function handleStatusToggle(event) {
+        const statusIcon = event.target;
+        const cell = statusIcon.closest(".task-cell");
+        if (cell) {
+          const day = cell.dataset.day;
+          const time = cell.dataset.time;
+          let currentStatus = routineData[day][time].status;
+          let newStatus;
+
+          switch (currentStatus) {
+            case "pending":
+              newStatus = "in-progress";
+              break;
+            case "in-progress":
+              newStatus = "done";
+              break;
+            case "done":
+              newStatus = "pending";
+              break;
+            default:
+              newStatus = "pending";
+          }
+
+          routineData[day][time].status = newStatus;
+          statusIcon.dataset.status = newStatus; // Atualiza o dataset para CSS
+          updateStatusIconClass(statusIcon, newStatus);
+          saveRoutineData();
+        }
+      }
+
+      /**
+       * Lida com a edição do cabeçalho de horário.
+       * @param {Event} event - O evento de clique no cabeçalho.
+       */
+      function handleTimeHeaderEdit(event) {
+        const th = event.target.closest(".time-header-cell");
+        if (!th || th.querySelector("input")) return; // Já está em modo de edição ou não é um cabeçalho de horário
+
+        const originalTime = th.dataset.time;
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = originalTime;
+        input.classList.add("editable-input");
+
+        // Substitui o texto pelo input
+        th.textContent = "";
+        th.appendChild(input);
+        input.focus();
+
+        // Lida com a atualização do horário ao perder o foco ou pressionar Enter
+        const updateTime = () => {
+          const newTime = input.value.trim();
+          if (
+            newTime &&
+            newTime !== originalTime &&
+            !currentTimes.includes(newTime)
+          ) {
+            // Atualiza currentTimes
+            const oldIndex = currentTimes.indexOf(originalTime);
+            if (oldIndex > -1) {
+              currentTimes[oldIndex] = newTime;
+              currentTimes.sort(); // Reordena os horários
+
+              // Atualiza routineData: move as tarefas do horário antigo para o novo
+              daysOfWeek.forEach((day) => {
+                if (routineData[day][originalTime]) {
+                  routineData[day][newTime] = routineData[day][originalTime];
+                  delete routineData[day][originalTime];
+                }
+              });
+              saveRoutineData();
+              renderTable(); // Re-renderiza para refletir a mudança
+            }
+          } else {
+            // Se o novo horário for vazio, igual ao antigo ou já existir, reverte
+            th.textContent = originalTime;
+          }
+          if (input.parentNode === th) {
+            // Verifica se o input ainda é filho do th antes de remover
+            th.removeChild(input);
+          }
+        };
+
+        input.addEventListener("blur", updateTime);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            input.blur(); // Dispara o evento blur para atualizar
+          }
+        });
+      }
+
+      // --- Inicialização da Aplicação ---
+
+      document.addEventListener("DOMContentLoaded", () => {
+        loadThemePreference(); // Carrega o tema ao iniciar
+        loadRoutineData(); // Carrega os dados da rotina
+        renderTable(); // Renderiza a tabela
+
+        // Adiciona listeners de eventos
+        themeToggleButton.addEventListener("click", toggleTheme);
+        addTimeButton.addEventListener("click", addNewTime);
+        newTimeInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            addNewTime();
+          }
+        });
+
+        // Delegação de eventos para células e ícones de status
+        routineTable.addEventListener("input", handleTaskEdit);
+        routineTable.addEventListener("blur", handleTaskEdit, true); // true para captura de eventos de blur
+        routineTable.addEventListener("click", (event) => {
+          if (event.target.classList.contains("status-icon")) {
+            handleStatusToggle(event);
+          } else if (event.target.classList.contains("time-header-cell")) {
+            handleTimeHeaderEdit(event);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
