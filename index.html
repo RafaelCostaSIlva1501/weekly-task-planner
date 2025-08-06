@@ -125,6 +125,7 @@
         color: var(--text-color);
         position: relative;
         vertical-align: top; /* Align content to top */
+
         /* height: 80px; REMOVED to allow dynamic height */
       }
 
@@ -396,6 +397,7 @@
             const taskContent = document.createElement("div");
             taskContent.classList.add("task-cell-content");
             taskContent.contentEditable = true;
+            taskContent.spellcheck = false;
             taskContent.textContent = routineData[day][time].task;
             td.appendChild(taskContent);
 
